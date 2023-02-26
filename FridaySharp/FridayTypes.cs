@@ -6,7 +6,7 @@
         {
             public string clientCode { get; set; } = "";
             public string password { get; set; }
-            public string schoolCode { get; set; } = "sxz";
+            public string schoolCode { get; set; }
             public string smsVerificationCode { get; set; } = "";
             public string userName { get; set; }
         }

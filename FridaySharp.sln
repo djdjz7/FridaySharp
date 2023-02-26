@@ -5,6 +5,8 @@ VisualStudioVersion = 17.4.33205.214
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FridaySharp", "FridaySharp\FridaySharp.csproj", "{82C406FF-300A-4BEA-AEA1-D8A4F5914200}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FridaySharpDemo", "FridaySharpDemo\FridaySharpDemo.csproj", "{29D07862-8500-4DF9-B481-06832F5C5B73}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{82C406FF-300A-4BEA-AEA1-D8A4F5914200}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{82C406FF-300A-4BEA-AEA1-D8A4F5914200}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{82C406FF-300A-4BEA-AEA1-D8A4F5914200}.Release|Any CPU.Build.0 = Release|Any CPU
+		{29D07862-8500-4DF9-B481-06832F5C5B73}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{29D07862-8500-4DF9-B481-06832F5C5B73}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{29D07862-8500-4DF9-B481-06832F5C5B73}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{29D07862-8500-4DF9-B481-06832F5C5B73}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

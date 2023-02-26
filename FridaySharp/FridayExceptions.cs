@@ -1,7 +1,10 @@
-﻿namespace FridaySharp
+﻿using System.Runtime.CompilerServices;
+
+namespace FridaySharp
 {
-    public class FridayExceptions
+    public static class FridayExceptions
     {
+        public static Exception ClientNotLoggedInException = new Exception("This client is not currently logged in.");
         
     }
 }
