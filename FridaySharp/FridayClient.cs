@@ -1,6 +1,9 @@
-﻿using System.Net.Http.Headers;
+﻿using System.Collections.ObjectModel;
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using static Aliyun.OSS.Model.LiveChannelStat;
 using static FridaySharp.FridayExceptions;
 using static FridaySharp.FridayTypes;
 using static FridaySharp.StringConstants;
@@ -92,7 +95,7 @@ namespace FridaySharp
             }
             else
             {
-                throw new Exception($"Error while attempting to refresh oss token.\nResponse data: {ossResponseString}");
+                throw new Exception($"Error occurred while attempting to refresh oss token.\nResponse data: {ossResponseString}");
             }
         }
 
@@ -129,7 +132,21 @@ namespace FridaySharp
             string response = await (await httpClient.PostAsync(AddNoteUrl, requestContent)).Content.ReadAsStringAsync();
             MinimumResponseData createFolderResponseData = JsonSerializer.Deserialize<MinimumResponseData>(response) ?? new MinimumResponseData();
             if (createFolderResponseData.msg != "操作成功")
-                throw new Exception($"Error while attempting to create a folder.\nResponse data: {response}");
+                throw new Exception($"Error occurred while attempting to create a folder.\nResponse data: {response}");
+        }
+        public async Task<NoteInfo[]?> GetAllNotesAsync()
+        {
+            httpClient.DefaultRequestHeaders.Clear();
+            httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {userInfo.token}");
+            string getAllNotesResponseString = await (await httpClient.GetAsync(GetAllNotesUrl)).Content.ReadAsStringAsync();
+            CommonResponseData getAllNotesResponse = getAllNotesResponseString.JsonDeserialize<CommonResponseData>() ?? new CommonResponseData();
+            if (getAllNotesResponse.msg == "操作成功")
+            {
+                string getAllNotesData = getAllNotesResponse.data.AesDecrypt();
+                return getAllNotesData.JsonDeserialize<GetAllNotesResponseData>()?.noteList;
+            }
+            else
+                throw new Exception($"Error occurred while attempting to retrieve note list.\nResponse data:{getAllNotesResponseString}");
         }
     }
 }
