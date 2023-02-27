@@ -18,6 +18,12 @@
             public string data { get; set; }
         }
 
+        public class MinimumResponseData
+        {
+            public int code { get; set; }
+            public string msg { get; set; }
+        }
+
         public class UserInfo
         {
             public string token { get; set; }

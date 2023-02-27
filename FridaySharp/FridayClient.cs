@@ -1,5 +1,6 @@
 ﻿using System.Net.Http.Headers;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using static FridaySharp.FridayExceptions;
 using static FridaySharp.FridayTypes;
 using static FridaySharp.StringConstants;
@@ -33,7 +34,6 @@ namespace FridaySharp
             school = School;
             account = Account;
             password = Password;
-            _ = LoginAsync();
         }
 
         public FridayClient(string School, string Account, string Password, string CustomAesKey)
@@ -42,7 +42,6 @@ namespace FridaySharp
             school = School;
             account = Account;
             password = Password;
-            _ = LoginAsync();
         }
 
         public async Task LoginAsync()
@@ -53,15 +52,15 @@ namespace FridaySharp
                 userName = account,
                 password = password,
             };
-            string requestData = aesUtil.AesEncrypt(JsonSerializer.Serialize(loginData));
+            string requestData = loginData.JsonSerialize().AesEncrypt();
             HttpContent content = new StringContent(requestData);
             content.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
 
-            var response = await httpClient.PostAsync(LoginUrl, content).Result.Content.ReadAsStringAsync();
-            CommonResponseData responseData = JsonSerializer.Deserialize<CommonResponseData>(response) ?? new CommonResponseData();
+            var responseString = await httpClient.PostAsync(LoginUrl, content).Result.Content.ReadAsStringAsync();
+            CommonResponseData responseData = responseString.JsonDeserialize<CommonResponseData>() ?? new CommonResponseData();
             if (responseData.msg == "操作成功")
             {
-                userInfo = JsonSerializer.Deserialize<UserInfo>(aesUtil.AesDecrypt(responseData.data)) ?? new UserInfo();
+                userInfo = responseData.data.AesDecrypt().JsonDeserialize<UserInfo>() ?? new UserInfo();
                 await RefreshOssTokenAsync();
                 isUserLoggedIn = true;
             }
@@ -75,13 +74,13 @@ namespace FridaySharp
         {
             httpClient.DefaultRequestHeaders.Clear();
             httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {userInfo.token}");
-            string ossResult = await httpClient.GetAsync(GetOssTokenUrl).Result.Content.ReadAsStringAsync();
-            CommonResponseData ossResponseData = JsonSerializer.Deserialize<CommonResponseData>(ossResult) ?? new CommonResponseData();
+            string ossResponseString = await (await httpClient.GetAsync(GetOssTokenUrl)).Content.ReadAsStringAsync();
+            CommonResponseData ossResponseData = ossResponseString.JsonDeserialize<CommonResponseData>() ?? new CommonResponseData();
 
             if (ossResponseData.msg == "操作成功")
             {
                 string ossAccessDataJson = aesUtil.AesDecrypt(ossResponseData.data);
-                OssAccessResponseData? ossAccessData = JsonSerializer.Deserialize<OssAccessResponseData>(ossAccessDataJson);
+                OssAccessResponseData? ossAccessData = ossAccessDataJson.JsonDeserialize<OssAccessResponseData>();
                 if (ossAccessData != null)
                 {
                     userInfo.accessKeyId = ossAccessData.accessKeyId;
@@ -93,9 +92,44 @@ namespace FridaySharp
             }
             else
             {
-                throw new Exception(ossResponseData.msg);
+                throw new Exception($"Error while attempting to refresh oss token.\nResponse data: {ossResponseString}");
             }
         }
 
+        public async Task CreateFolderAsync(string FolderName)
+        {
+            await CreateFolderAsync(FolderName, "0");
+        }
+        public async Task CreateFolderAsync(NoteInfo FolderInfo)
+        {
+            await CreateFolderAsync(FolderInfo.fileName, string.IsNullOrEmpty(FolderInfo.parentId) ? "0" : FolderInfo.parentId);
+        }
+        public async Task CreateFolderAsync(string FolderName, string ParentID)
+        {
+            if (string.IsNullOrEmpty(FolderName))
+            {
+                throw InvalidFileNameException;
+            }
+
+            httpClient.DefaultRequestHeaders.Clear();
+            httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {userInfo.token}");
+            string parentId = string.IsNullOrEmpty(ParentID) ? "0" : ParentID;
+
+            AddFileData addFileData = new AddFileData()
+            {
+                fileName = FolderName,
+                fileId = Guid.NewGuid().ToString("N"),
+                parentId = parentId,
+                fileUrl = "",
+                type = 0
+            };
+            string requestData = JsonSerializer.Serialize(addFileData);
+            HttpContent requestContent = new StringContent(aesUtil.AesEncrypt(requestData));
+            requestContent.Headers.ContentType = MediaTypeHeaderValue.Parse("application/json");
+            string response = await (await httpClient.PostAsync(AddNoteUrl, requestContent)).Content.ReadAsStringAsync();
+            MinimumResponseData createFolderResponseData = JsonSerializer.Deserialize<MinimumResponseData>(response) ?? new MinimumResponseData();
+            if (createFolderResponseData.msg != "操作成功")
+                throw new Exception($"Error while attempting to create a folder.\nResponse data: {response}");
+        }
     }
 }

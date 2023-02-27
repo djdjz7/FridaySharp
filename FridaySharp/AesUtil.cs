@@ -1,4 +1,5 @@
-﻿using System.Security.Cryptography;
+﻿using System.Diagnostics;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace FridaySharp
@@ -44,4 +45,6 @@ namespace FridaySharp
             return Convert.ToBase64String(resultArray);
         }
     }
+
+    
 }
