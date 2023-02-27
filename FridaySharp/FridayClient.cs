@@ -31,6 +31,18 @@ namespace FridaySharp
 
         private HttpClient httpClient = new HttpClient();
 
+        private List<NoteInfo> allNotes = new List<NoteInfo>();
+        public List<NoteInfo> AllNotes
+        {
+            get
+            {
+                if(isUserLoggedIn)
+                    return allNotes;
+                else
+                    throw ClientNotLoggedInException;
+            }
+        }
+
         public FridayClient(string School, string Account, string Password)
         {
             aesUtil = new AesUtil();
@@ -134,7 +146,7 @@ namespace FridaySharp
             if (createFolderResponseData.msg != "操作成功")
                 throw new Exception($"Error occurred while attempting to create a folder.\nResponse data: {response}");
         }
-        public async Task<NoteInfo[]?> GetAllNotesAsync()
+        public async Task<List<NoteInfo>?> GetAllNotesAsync()
         {
             httpClient.DefaultRequestHeaders.Clear();
             httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {userInfo.token}");
@@ -143,7 +155,8 @@ namespace FridaySharp
             if (getAllNotesResponse.msg == "操作成功")
             {
                 string getAllNotesData = getAllNotesResponse.data.AesDecrypt();
-                return getAllNotesData.JsonDeserialize<GetAllNotesResponseData>()?.noteList;
+                allNotes = new List<NoteInfo>(getAllNotesData.JsonDeserialize<GetAllNotesResponseData>()?.noteList ?? Array.Empty<NoteInfo>());
+                return allNotes;
             }
             else
                 throw new Exception($"Error occurred while attempting to retrieve note list.\nResponse data:{getAllNotesResponseString}");
