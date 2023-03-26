@@ -1,9 +1,6 @@
-﻿using System.Collections.ObjectModel;
+﻿using Aliyun.OSS;
 using System.Net.Http.Headers;
-using System.Net.Http.Json;
 using System.Text.Json;
-using System.Text.Json.Serialization;
-using static Aliyun.OSS.Model.LiveChannelStat;
 using static FridaySharp.FridayExceptions;
 using static FridaySharp.FridayTypes;
 using static FridaySharp.StringConstants;
@@ -36,7 +33,7 @@ namespace FridaySharp
         {
             get
             {
-                if(isUserLoggedIn)
+                if (isUserLoggedIn)
                     return allNotes;
                 else
                     throw ClientNotLoggedInException;
@@ -160,6 +157,49 @@ namespace FridaySharp
             }
             else
                 throw new Exception($"Error occurred while attempting to retrieve note list.\nResponse data:{getAllNotesResponseString}");
+        }
+        public bool DeleteObjectFromOss(NoteInfo NoteInfo)
+        {
+            return DeleteObjectFromOss(NoteInfo.fileUrl);
+        }
+        public bool DeleteObjectFromOss(string NoteFileUrl)
+        {
+            var bucketName = "friday-note";
+            // 创建OSSClient实例。
+            var client = new OssClient(
+                "https://oss-cn-hangzhou.aliyuncs.com",
+                userInfo.accessKeyId,
+                userInfo.accessKeySecret,
+                userInfo.securityToken);
+            try
+            {
+                var keys = new List<string>();
+                keys.Add(NoteFileUrl);
+                var request = new DeleteObjectsRequest(bucketName, keys, true);
+                var result = client.DeleteObjects(request);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                return false;
+            }
+        }
+
+        public async Task DeleteNoteAsync(string NoteID)
+        {
+            string contentString = $"[\"{NoteID}\"]";
+            httpClient.DefaultRequestHeaders.Clear();
+            httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {userInfo.token}");
+            HttpContent content = new StringContent(contentString.AesEncrypt());
+            content.Headers.ContentType.MediaType = "application/json";
+            string responseString = await (await httpClient.PostAsync(DeleteNoteUrl, content)).Content.ReadAsStringAsync();
+            var response = responseString.JsonDeserialize<MinimumResponseData>();
+            if (response.msg != "操作成功")
+                throw new Exception($"Error occurred while attempting to delete a note.\nResponse data: {responseString}");
+        }
+        public async Task DeleteNoteAsync(NoteInfo NoteInfo)
+        {
+            await DeleteNoteAsync(NoteInfo.fileId);
         }
     }
 }
